@@ -22,13 +22,17 @@ public class MovingPlatform : MonoBehaviour {
     }
 
     private void Update() {
+        MovePlatform();
+    }
+
+    private void MovePlatform() {
         trackPercent += direction * speed * Time.deltaTime;
         float x = (finishPos.x - startPos.x) * trackPercent + startPos.x;
         float y = (finishPos.y - startPos.y) * trackPercent + startPos.y;
 
         transform.position = new Vector3(x, y, startPos.z);
 
-        if ((direction == 1 && trackPercent > 1f) || (direction == -1 && trackPercent < 0f)) {
+        if ((direction == 1 && trackPercent > 1) || (direction == -1 && trackPercent < 0)) {
             direction *= -1;
         }
     }

@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using UnityEditor.Timeline;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -11,8 +12,9 @@ public class Player : MonoBehaviour {
     [SerializeField] private BoxCollider2D standingCollider;
     [SerializeField] private BoxCollider2D jumpingCollider;
 
-    public float moveSpeed = 2f;
-    public float runSpeed = 3f;
+    public float topSpeed = 2f;
+    public float topRunSpeed = 3f;
+    public float acceleration = 1f;
     public float jumpHeight = 4f;
     public float airJumpHeight = 3f;
     public int maxAirJumps = 1;
@@ -20,11 +22,13 @@ public class Player : MonoBehaviour {
     
     private Rigidbody2D body;
     private Animator anim;
-
     private Vector2 playerMovement;
+    private float moveSpeed;
+    private int availableAirJumps;
     private float movementInputX;
     //private float movementInputY;
-    private int availableAirJumps;
+
+    private MovingPlatform platform;
 
     private CheckGroundedState groundedState;
     private bool shouldCheckGround;
@@ -40,6 +44,7 @@ public class Player : MonoBehaviour {
         anim = GetComponent<Animator>();
         groundedState = GetComponentInChildren<CheckGroundedState>();
 
+        moveSpeed = 0;
         availableAirJumps = maxAirJumps;
 
         input.OnPlayerMovement += HandleMovement;
@@ -50,53 +55,89 @@ public class Player : MonoBehaviour {
 
     private void Update() {
         UpdateMovement();
-        HandleStuff();
+        HandleMovingPlatforms();
+        HandlePlayerScale();
         GroundCheck();
     }
 
     private void UpdateMovement() {
         if (!isRunning) {
-            playerMovement = new Vector2(movementInputX * moveSpeed, body.velocity.y);
+            if (movementInputX == 0) {
+                moveSpeed = 0;
+            }
+            if (moveSpeed > topSpeed) {
+                moveSpeed = topSpeed;
+            }
+            if (moveSpeed <= topSpeed) {
+                moveSpeed += acceleration * Time.deltaTime;
+                playerMovement = new Vector2(movementInputX * moveSpeed, body.velocity.y);
+            } else {
+                playerMovement = new Vector2(movementInputX * topSpeed, body.velocity.y);
+            }
         } else {
-            playerMovement = new Vector2(movementInputX * runSpeed, body.velocity.y);
+            if (movementInputX == 0) {
+                moveSpeed = 0;
+            }
+            if (moveSpeed <= topRunSpeed) {
+                moveSpeed += acceleration * Time.deltaTime;
+                playerMovement = new Vector2(movementInputX * moveSpeed, body.velocity.y);
+            } else {
+                playerMovement = new Vector2(movementInputX * topRunSpeed, body.velocity.y);
+            }
         }
         body.velocity = playerMovement;
-
-        //body.gravityScale = (groundedState && Mathf.Approximately(movementX, 0)) ? 0 : 1;
     }
 
-    private void HandleStuff() {
-        MovingPlatform platform = null;
-        if (groundedState != null) {
-            platform = groundedState.GetComponent<MovingPlatform>();
+    private void HandleMovingPlatforms() {
+        Vector3 max = standingCollider.bounds.max;
+        Vector3 min = standingCollider.bounds.min;
+        Vector2 corner1 = new Vector2(max.x, min.y - 0.1f);
+        Vector2 corner2 = new Vector2(min.x, min.y - 0.2f);
+        Collider2D hit = Physics2D.OverlapArea(corner1, corner2);
+
+        platform = null;
+
+        if (hit != null) {
+            platform = hit.GetComponent<MovingPlatform>();
+        } else {
+            transform.parent = null;
         }
         if (platform != null) {
             transform.parent = platform.transform;
         } else {
             transform.parent = null;
         }
-
-        // Player scale
-        Vector3 pScale = Vector3.one;
-        if (platform != null) {
-            pScale = platform.transform.localScale;
-        }
-        if (!Mathf.Approximately(playerMovement.x, 0)) {
-            transform.localScale = new Vector3(Mathf.Sign(-playerMovement.x) / pScale.x, 1 / pScale.y, 1);
-        }
-
-        // Animations
-        anim.SetFloat(SPEED, Mathf.Abs(playerMovement.x));
-
-        if (!Mathf.Approximately(playerMovement.x, 0)) {
-            transform.localScale = new Vector3(Mathf.Sign(-playerMovement.x), 1, 1);
-        }
-        //if (!Mathf.Approximately(0, movementY)) {
-        //    anim.SetBool(IS_CROUCHING, true);
-        //} else {
-        //    anim.SetBool(IS_CROUCHING, false);
-        //}
     }
+
+    private void HandlePlayerScale() {
+        Vector3 playerScale = Vector3.one;
+
+        if (platform != null) {
+            playerScale = platform.transform.localScale;
+        }
+        if (!Mathf.Approximately(playerMovement.x, 0)) {
+            transform.localScale = new Vector3(Mathf.Sign(-playerMovement.x) / playerScale.x, 1 / playerScale.y, 1);
+        }
+        anim.SetFloat(SPEED, Mathf.Abs(playerMovement.x));
+    }
+
+    private void GroundCheck() {
+        if (body.velocity.y <= 0) {
+            shouldCheckGround = true;
+        }
+        if (shouldCheckGround && groundedState.GetIsGrounded()) {
+            standingCollider.enabled = true;
+            jumpingCollider.enabled = false;
+
+            anim.SetBool(IS_JUMPING, false);
+
+            shouldCheckGround = false;
+
+            availableAirJumps = maxAirJumps;
+        }
+    }
+
+//========================================================================================
 
     private void HandleMovement(object sender, Vector2 movementInput) {
         movementInputX = movementInput.x;
@@ -122,7 +163,6 @@ public class Player : MonoBehaviour {
 
             anim.SetBool(IS_JUMPING, true);
         }
-
         if (!groundedState.GetIsGrounded() && availableAirJumps > 0) {
             // Reset the Y momentum before applying the force
             Vector2 newVelocity = new Vector2(body.velocity.x, 0);
@@ -140,23 +180,6 @@ public class Player : MonoBehaviour {
             Debug.Log("dashing");
             //body.AddRelativeForce(Vector2.forward * dashLenght, ForceMode2D.Impulse);
         //}
-    }
-
-    private void GroundCheck() {
-        if (body.velocity.y <= 0) {
-            shouldCheckGround = true;
-        }
-
-        if (shouldCheckGround && groundedState.GetIsGrounded()) {
-            standingCollider.enabled = true;
-            jumpingCollider.enabled = false;
-
-            anim.SetBool(IS_JUMPING, false);
-
-            shouldCheckGround = false;
-
-            availableAirJumps = maxAirJumps;
-        }
     }
 
     private void OnDestroy() {
