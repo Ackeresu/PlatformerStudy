@@ -1,10 +1,11 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class CheckGroundedState : MonoBehaviour {
 
-    private bool isGrounded;
+    public bool isGrounded;
 
     public bool GetIsGrounded() => isGrounded;
  

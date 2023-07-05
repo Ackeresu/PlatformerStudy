@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using UnityEditor.Timeline;
 using UnityEngine;
+using UnityEngine.Timeline;
 using UnityEngine.UIElements;
 
 public class Player : MonoBehaviour {
@@ -28,16 +29,30 @@ public class Player : MonoBehaviour {
     private float movementInputX;
     //private float movementInputY;
 
-    private MovingPlatform platform;
-
-    private CheckGroundedState groundedState;
-    private bool shouldCheckGround;
     private bool isRunning;
 
-    // Animation variables
+    // Ground check
+    private CheckGroundedState groundedState;
+    private bool shouldCheckGround;
+
+    public Platform platform;
+
+    // Animation
     private static string SPEED = "Speed";
     private static string IS_JUMPING = "isJumping";
     //private static string IS_CROUCHING = "isCrouching";
+
+    //private void OnDrawGizmos() {
+    //    Vector3 max = standingCollider.bounds.max;
+    //    Vector3 min = standingCollider.bounds.min;
+    //    Vector2 corner1 = new Vector2(max.x, min.y - 0.1f);
+    //    Vector2 corner2 = new Vector2(min.x, min.y - 0.15f);
+    //
+    //    Gizmos.color = Color.yellow;
+    //    Gizmos.DrawLine(max, min);
+    //    Gizmos.color = Color.green;
+    //    Gizmos.DrawLine(corner1, corner2);
+    //}
 
     private void Start() {
         body = GetComponent<Rigidbody2D>();
@@ -89,16 +104,17 @@ public class Player : MonoBehaviour {
     }
 
     private void HandleMovingPlatforms() {
+        // Create an area under the player to check if it collides with platform
         Vector3 max = standingCollider.bounds.max;
         Vector3 min = standingCollider.bounds.min;
         Vector2 corner1 = new Vector2(max.x, min.y - 0.1f);
-        Vector2 corner2 = new Vector2(min.x, min.y - 0.2f);
+        Vector2 corner2 = new Vector2(min.x, min.y - 0.15f);
         Collider2D hit = Physics2D.OverlapArea(corner1, corner2);
 
         platform = null;
 
         if (hit != null) {
-            platform = hit.GetComponent<MovingPlatform>();
+            platform = hit.GetComponent<Platform>();
         } else {
             transform.parent = null;
         }
