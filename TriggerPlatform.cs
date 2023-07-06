@@ -11,14 +11,18 @@ using UnityEngine.Rendering;
 public class TriggerPlatform : MonoBehaviour {
 
     public enum PlatformType {
+        Falling,
         Moving,
         Rotating,
-        Falling,
     };
     public PlatformType platformType;
 
     // Shared
     public float speed = 1;
+
+    // Falling platform
+    public float secondsBeforeFall = 1;
+    public bool doesRespawn = false;
 
     // Moving platform
     public Vector3 finishPos = Vector3.zero;
@@ -30,10 +34,6 @@ public class TriggerPlatform : MonoBehaviour {
     // Rotating platform
     public Vector3 rotationPivot = Vector3.zero;
     public bool antiClockwise = false;
-
-    // Falling platform
-    public float secondsBeforeFall = 1;
-    public bool doesRespawn = false;
 
     // For settings purposes
     private BoxCollider2D box;
@@ -66,36 +66,14 @@ public class TriggerPlatform : MonoBehaviour {
     }
 
     private void Update() {
+        if (platformType == PlatformType.Falling) {
+            FallingPlatform();
+        }
         if (platformType == PlatformType.Moving) {
             MovePlatform();
         }
         if (platformType == PlatformType.Rotating) {
             RotatePlatform();
-        }
-        if (platformType == PlatformType.Falling) {
-            FallingPlatform();
-        }
-    }
-
-    private void MovePlatform() {
-        trackPercent += direction * speed * Time.deltaTime;
-        float x = (finishPos.x - startPos.x) * trackPercent + startPos.x;
-        float y = (finishPos.y - startPos.y) * trackPercent + startPos.y;
-
-        transform.position = new Vector3(x, y, startPos.z);
-
-        if ((direction == 1 && trackPercent > 1) || (direction == -1 && trackPercent < 0)) {
-            direction *= -1;
-        }
-    }
-
-    private void RotatePlatform() {
-        if (!antiClockwise) {
-            transform.RotateAround(rotationPivot, Vector3.forward, speed * -90 * Time.deltaTime);
-            transform.rotation = Quaternion.Euler(0, 0, 0);
-        } else {
-            transform.RotateAround(rotationPivot, Vector3.forward, speed * 90 * Time.deltaTime);
-            transform.rotation = Quaternion.Euler(0, 0, 0);
         }
     }
 
@@ -109,6 +87,30 @@ public class TriggerPlatform : MonoBehaviour {
                 Vector2 newPos = new Vector2(transform.position.x, transform.position.y - 0.5f);
                 transform.position = newPos;
             }
+        }
+    }
+
+    private void MovePlatform() {
+        if (checkPlayerIsOn.playerIsOn) {
+            trackPercent += direction * speed * Time.deltaTime;
+            float x = (finishPos.x - startPos.x) * trackPercent + startPos.x;
+            float y = (finishPos.y - startPos.y) * trackPercent + startPos.y;
+
+            transform.position = new Vector3(x, y, startPos.z);
+
+            if ((direction == 1 && trackPercent > 1) || (direction == -1 && trackPercent < 0)) {
+                direction *= -1;
+            }
+        }
+    }
+
+    private void RotatePlatform() {
+        if (!antiClockwise) {
+            transform.RotateAround(rotationPivot, Vector3.forward, speed * -90 * Time.deltaTime);
+            transform.rotation = Quaternion.Euler(0, 0, 0);
+        } else {
+            transform.RotateAround(rotationPivot, Vector3.forward, speed * 90 * Time.deltaTime);
+            transform.rotation = Quaternion.Euler(0, 0, 0);
         }
     }
 }

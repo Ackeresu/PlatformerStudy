@@ -11,6 +11,7 @@ public class PlatformEditor : Editor {
     SerializedProperty speed;
 
     // Moving platform
+    SerializedProperty intermediatePos;
     SerializedProperty finishPos;
 
     // Rotating platform
@@ -22,6 +23,7 @@ public class PlatformEditor : Editor {
         speed = serializedObject.FindProperty("speed");
 
         // Moving platform
+        intermediatePos = serializedObject.FindProperty("intermediatePos");
         finishPos = serializedObject.FindProperty("finishPos");
 
         // Rotating platform
@@ -35,6 +37,7 @@ public class PlatformEditor : Editor {
 
         if (platformType.enumValueIndex == 1) {
             EditorGUILayout.PropertyField(speed);
+            EditorGUILayout.PropertyField(intermediatePos);
             EditorGUILayout.PropertyField(finishPos);
         }
         if (platformType.enumValueIndex == 2) {

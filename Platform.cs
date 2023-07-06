@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Data.SqlTypes;
 using System.Threading;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -20,11 +21,13 @@ public class Platform : MonoBehaviour {
     public float speed = 1;
 
     // Moving platform
+    public Vector3[] intermediatePos;
     public Vector3 finishPos = Vector3.zero;
 
     private Vector3 startPos;
     private float trackPercent = 0;
     private int direction = 1;
+    private int currentStop = 0;
 
     // Rotating platform
     public Vector3 rotationPivot = Vector3.zero;
@@ -37,7 +40,6 @@ public class Platform : MonoBehaviour {
     // For settings purposes
     private BoxCollider2D box;
     private PlatformEffector2D effector;
-    private CheckPlayerIsOn checkPlayerIsOn;
 
     private void Reset() {
         box = GetComponent<BoxCollider2D>();
@@ -49,14 +51,28 @@ public class Platform : MonoBehaviour {
 
     private void Start() {
         startPos = transform.position;
-        checkPlayerIsOn = GetComponent<CheckPlayerIsOn>();
     }
 
     private void OnDrawGizmos() {
         Gizmos.color = Color.red;
 
         if (platformType == PlatformType.Moving) {
-            Gizmos.DrawLine(transform.position, finishPos);
+            //if (intermediatePos.Length > 0) {
+            //    for (var i = 0; i < intermediatePos.Length; i++) {
+            //        Debug.Log(i);
+            //        if (i == 0) {
+            //            Gizmos.DrawLine(transform.position, intermediatePos[i]);
+            //        }
+            //        else if (i > 0 && i < intermediatePos.Length) {
+            //            Gizmos.DrawLine(intermediatePos[i], intermediatePos[i++]);
+            //        }
+            //        else if (i == intermediatePos.Length) {
+            //            Gizmos.DrawLine(intermediatePos[i], finishPos);
+            //        }
+            //    }
+            //} else {
+                Gizmos.DrawLine(transform.position, finishPos);
+            //}
         }
         if (platformType == PlatformType.Rotating) {
             Gizmos.DrawLine(transform.position, rotationPivot);
@@ -75,14 +91,79 @@ public class Platform : MonoBehaviour {
 
     private void MovePlatform() {
         trackPercent += direction * speed * Time.deltaTime;
-        float x = (finishPos.x - startPos.x) * trackPercent + startPos.x;
-        float y = (finishPos.y - startPos.y) * trackPercent + startPos.y;
+        float x, y;
+        Vector3 oldPos;
+        Vector3 newPos;
 
-        transform.position = new Vector3(x, y, startPos.z);
+        if (intermediatePos.Length > 0) {
+            if (currentStop == 0) {
+                oldPos = startPos;
+                newPos = intermediatePos[currentStop];
 
-        if ((direction == 1 && trackPercent > 1) || (direction == -1 && trackPercent < 0)) {
-            direction *= -1;
+                x = (newPos.x - oldPos.x) * trackPercent + oldPos.x;
+                y = (newPos.y - oldPos.y) * trackPercent + oldPos.y;
+
+                transform.position = new Vector3(x, y, startPos.z);
+
+                if (direction == 1 && trackPercent > 1) {
+                    trackPercent = 0;
+                    currentStop++;
+                }
+                if (direction == -1 && trackPercent < 0) {
+                    direction *= -1;
+                }
+            }
+
+            else if (currentStop > 0 && currentStop < intermediatePos.Length) {
+                oldPos = intermediatePos[currentStop - 1];
+                newPos = intermediatePos[currentStop];
+
+                x = (newPos.x - oldPos.x) * trackPercent + oldPos.x;
+                y = (newPos.y - oldPos.y) * trackPercent + oldPos.y;
+
+                transform.position = new Vector3(x, y, startPos.z);
+            
+                if (direction == 1 && trackPercent > 1) {
+                    trackPercent = 0;
+                    currentStop++;
+                }
+                if (direction == -1 && trackPercent < 0) {
+                    trackPercent = 1;
+                    currentStop--;
+                }
+            }
+
+            else if (currentStop == intermediatePos.Length) {
+                oldPos = intermediatePos[currentStop - 1];
+                newPos = finishPos;
+
+                x = (newPos.x - oldPos.x) * trackPercent + oldPos.x;
+                y = (newPos.y - oldPos.y) * trackPercent + oldPos.y;
+
+                transform.position = new Vector3(x, y, startPos.z);
+
+                if (direction == 1 && trackPercent > 1) {
+                    direction *= -1;
+                }
+                if (direction == -1 && trackPercent < 0) {
+                    trackPercent = 1;
+                    currentStop--;
+                }
+            }
+        } else {
+            x = (finishPos.x - startPos.x) * trackPercent + startPos.x;
+            y = (finishPos.y - startPos.y) * trackPercent + startPos.y;
+
+            transform.position = new Vector3(x, y, startPos.z);
+
+            if ((direction == 1 && trackPercent > 1) || (direction == -1 && trackPercent < 0)) {
+                direction *= -1;
+            }
         }
+    }
+
+    private void UpdatePlatformPosition() {
+
     }
 
     private void RotatePlatform() {
