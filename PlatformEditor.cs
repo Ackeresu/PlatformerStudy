@@ -12,6 +12,7 @@ public class PlatformEditor : Editor {
 
     // Moving platform
     SerializedProperty stopAtEnd;
+    SerializedProperty circleBetweenPos;
     SerializedProperty intermediatePos;
     SerializedProperty finishPos;
 
@@ -25,6 +26,7 @@ public class PlatformEditor : Editor {
 
         // Moving platform
         stopAtEnd = serializedObject.FindProperty("stopAtEnd");
+        circleBetweenPos = serializedObject.FindProperty("circleBetweenPos");
         intermediatePos = serializedObject.FindProperty("intermediatePos");
         finishPos = serializedObject.FindProperty("finishPos");
 
@@ -40,6 +42,7 @@ public class PlatformEditor : Editor {
         if (platformType.enumValueIndex == 1) {
             EditorGUILayout.PropertyField(speed);
             EditorGUILayout.PropertyField(stopAtEnd);
+            EditorGUILayout.PropertyField(circleBetweenPos);
             EditorGUILayout.PropertyField(intermediatePos);
             EditorGUILayout.PropertyField(finishPos);
         }

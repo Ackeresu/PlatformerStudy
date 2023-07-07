@@ -37,8 +37,9 @@ public class Platform : MonoBehaviour {
     private float trackPercent = 0;
     private int direction = 1;
     private int currentStop = 0;
-    //private List<Vector3> posList;
-    //private Vector3[] posArray;
+    private bool goBackToStart = false;
+    private List<Vector3> posList = new List<Vector3>();
+    private Vector3[] posArray;
 
     // Rotating platform
     public Vector3 rotationPivot = Vector3.zero;
@@ -68,17 +69,24 @@ public class Platform : MonoBehaviour {
         Gizmos.color = Color.red;
 
         if (platformType == PlatformType.Moving) {
-        //   if (intermediatePos.Count > 0) {
-        //        posList.Add(transform.position);
-        //        posList.AddRange(intermediatePos);
-        //        posList.Add(finishPos);
-        //        
-        //        posArray = posList.ToArray();
-        //        Gizmos.DrawLineStrip(posArray, false);
-        //        posList.Clear();
-        //    } else {
-               Gizmos.DrawLine(transform.position, finishPos);
-        //   }
+            if (intermediatePos.Count == 0) {
+                Gizmos.DrawLine(transform.position, finishPos);
+            } else {
+                if (startPos == Vector3.zero) {
+                    startPos = transform.position;
+                }
+                posList.Clear();
+                posList.Add(startPos);
+                posList.AddRange(intermediatePos);
+                posList.Add(finishPos);
+                posArray = posList.ToArray();
+
+                if (circleBetweenPos) {
+                    Gizmos.DrawLineStrip(posArray, true);
+                } else {
+                    Gizmos.DrawLineStrip(posArray, false);
+                }
+            }
         }
         if (platformType == PlatformType.Rotating) {
             Gizmos.DrawLine(transform.position, rotationPivot);
@@ -99,7 +107,7 @@ public class Platform : MonoBehaviour {
         trackPercent += direction * speed * Time.deltaTime;
 
         // There are not intermediate positions
-        if (intermediatePos.Count <= 0) {
+        if (intermediatePos.Count == 0) {
             oldPos = startPos;
             newPos = finishPos;
 
@@ -143,7 +151,7 @@ public class Platform : MonoBehaviour {
                 currentStop--;
             }
         }
-        else if (currentStop == intermediatePos.Count) {
+        else if (currentStop == intermediatePos.Count && !goBackToStart) {
             oldPos = intermediatePos[currentStop - 1];
             newPos = finishPos;
 
@@ -152,13 +160,29 @@ public class Platform : MonoBehaviour {
             } else {
                 UpdatePlatformPosition();
 
-                if (direction == 1 && trackPercent > 1) {
+                if (direction == 1 && trackPercent > 1 && !circleBetweenPos) {
                     direction *= -1;
+                }
+                else if (direction == 1 && trackPercent > 1 && circleBetweenPos) {
+                    trackPercent = 0;
+                    goBackToStart = true;
                 }
                 if (direction == -1 && trackPercent < 0) {
                     trackPercent = 1;
                     currentStop--;
                 }
+            }
+        }
+        else if (currentStop == intermediatePos.Count && goBackToStart) {
+            oldPos = finishPos;
+            newPos = startPos;
+
+            UpdatePlatformPosition();
+
+            if (trackPercent > 1) {
+                trackPercent = 0;
+                currentStop = 0;
+                goBackToStart = false;
             }
         }
     }
