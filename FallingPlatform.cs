@@ -32,15 +32,15 @@ public class FallingPlatform : MonoBehaviour {
     }
 
     private void Update() {
-        //if (platform.playerIsOn && !isFalling) {
-            //    StartCoroutine(MakePlatformFall());
-            //}
-            if (platform.platformType == Platform.PlatformType.Moving && platform.stopAtEnd) {
-                Debug.Log("bubu");
-                if (platform.transform.position == platform.finishPos) {
-                    StartCoroutine(MakePlatformFall());
-                }
+        if (platform.playerIsOn && !isFalling) {
+                StartCoroutine(MakePlatformFall());
             }
+            //if (platform.platformType == Platform.PlatformType.Moving && platform.stopAtEnd) {
+            //    Debug.Log("bubu");
+            //    if (platform.transform.position == platform.finishPos) {
+            //        StartCoroutine(MakePlatformFall());
+            //    }
+            //}
         //}
     }
 
