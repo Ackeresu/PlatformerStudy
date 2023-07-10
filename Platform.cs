@@ -9,6 +9,9 @@ using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.UIElements;
 
+#if isFalling
+[RequireComponent(typeof(Rigidbody2D))]
+#endif
 [RequireComponent(typeof(BoxCollider2D))]
 [RequireComponent(typeof(PlatformEffector2D))]
 
@@ -20,6 +23,7 @@ public class Platform : MonoBehaviour {
         Rotating,
     };
     public PlatformType platformType;
+    public bool playerIsOn;
 
     // Shared
     public float speed = 1;
@@ -44,10 +48,6 @@ public class Platform : MonoBehaviour {
     // Rotating platform
     public Vector3 rotationPivot = Vector3.zero;
     public bool antiClockwise = false;
-
-    // Falling platform
-    public float secondsBeforeFall = 1;
-    public bool doesRespawn = false;
 
     // For settings purposes
     private BoxCollider2D box;
@@ -111,7 +111,7 @@ public class Platform : MonoBehaviour {
             oldPos = startPos;
             newPos = finishPos;
 
-            if (stopAtEnd && trackPercent >= 1) {
+            if (stopAtEnd && trackPercent > 1) {
                 trackPercent = 1;
             } else {
                 UpdatePlatformPosition();
@@ -135,8 +135,7 @@ public class Platform : MonoBehaviour {
             if (direction == -1 && trackPercent < 0) {
                 direction *= -1;
             }
-        }
-        else if (currentStop > 0 && currentStop < intermediatePos.Count) {
+        } else if (currentStop > 0 && currentStop < intermediatePos.Count) {
             oldPos = intermediatePos[currentStop - 1];
             newPos = intermediatePos[currentStop];
 
@@ -150,20 +149,18 @@ public class Platform : MonoBehaviour {
                 trackPercent = 1;
                 currentStop--;
             }
-        }
-        else if (currentStop == intermediatePos.Count && !goBackToStart) {
+        } else if (currentStop == intermediatePos.Count && !goBackToStart) {
             oldPos = intermediatePos[currentStop - 1];
             newPos = finishPos;
 
-            if (stopAtEnd && trackPercent >= 1) {
+            if (stopAtEnd && trackPercent > 1) {
                 trackPercent = 1;
             } else {
                 UpdatePlatformPosition();
 
                 if (direction == 1 && trackPercent > 1 && !circleBetweenPos) {
                     direction *= -1;
-                }
-                else if (direction == 1 && trackPercent > 1 && circleBetweenPos) {
+                } else if (direction == 1 && trackPercent > 1 && circleBetweenPos) {
                     trackPercent = 0;
                     goBackToStart = true;
                 }
@@ -172,8 +169,7 @@ public class Platform : MonoBehaviour {
                     currentStop--;
                 }
             }
-        }
-        else if (currentStop == intermediatePos.Count && goBackToStart) {
+        } else if (currentStop == intermediatePos.Count && goBackToStart) {
             oldPos = finishPos;
             newPos = startPos;
 
@@ -202,5 +198,23 @@ public class Platform : MonoBehaviour {
             transform.RotateAround(rotationPivot, Vector3.forward, speed * 90 * Time.deltaTime);
             transform.rotation = Quaternion.Euler(0, 0, 0);
         }
+    }
+
+    public void SetPlayerOn(Transform player, bool isOn) {
+        if (isOn) {
+            player.SetParent(transform);
+            playerIsOn = true;
+        } else {
+            player.SetParent(null);
+            playerIsOn = false;
+        }
+    }
+
+    public void ResetPlatform(PlatformType type) {
+        platformType = type;
+        transform.position = startPos;
+        trackPercent = 0;
+        direction = 1;
+        currentStop = 0;
     }
 }

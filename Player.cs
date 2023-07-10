@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using Unity.VisualScripting;
 using UnityEditor.Timeline;
 using UnityEngine;
 using UnityEngine.Timeline;
@@ -13,6 +14,7 @@ public class Player : MonoBehaviour {
     [SerializeField] private BoxCollider2D standingCollider;
     [SerializeField] private BoxCollider2D jumpingCollider;
 
+    public int health = 5;
     public float topSpeed = 2f;
     public float topRunSpeed = 3f;
     public float acceleration = 1f;
@@ -20,7 +22,7 @@ public class Player : MonoBehaviour {
     public float airJumpHeight = 3f;
     public int maxAirJumps = 1;
     public float dashLenght = 2f;
-    
+
     private Rigidbody2D body;
     private Animator anim;
     private Vector2 playerMovement;
@@ -29,35 +31,25 @@ public class Player : MonoBehaviour {
     private float movementInputX;
     //private float movementInputY;
 
+    //private bool isJumping;
     private bool isRunning;
 
     // Ground check
-    private CheckGroundedState groundedState;
+    private GroundChecker groundChecker;
     private bool shouldCheckGround;
 
     public Platform platform;
+    public Enemy enemy;
 
     // Animation
     private static string SPEED = "Speed";
     private static string IS_JUMPING = "isJumping";
     //private static string IS_CROUCHING = "isCrouching";
 
-    //private void OnDrawGizmos() {
-    //    Vector3 max = standingCollider.bounds.max;
-    //    Vector3 min = standingCollider.bounds.min;
-    //    Vector2 corner1 = new Vector2(max.x, min.y - 0.1f);
-    //    Vector2 corner2 = new Vector2(min.x, min.y - 0.15f);
-    //
-    //    Gizmos.color = Color.yellow;
-    //    Gizmos.DrawLine(max, min);
-    //    Gizmos.color = Color.green;
-    //    Gizmos.DrawLine(corner1, corner2);
-    //}
-
     private void Start() {
         body = GetComponent<Rigidbody2D>();
         anim = GetComponent<Animator>();
-        groundedState = GetComponentInChildren<CheckGroundedState>();
+        groundChecker = GetComponentInChildren<GroundChecker>();
 
         moveSpeed = 0;
         availableAirJumps = maxAirJumps;
@@ -70,8 +62,8 @@ public class Player : MonoBehaviour {
 
     private void Update() {
         UpdateMovement();
-        HandleMovingPlatforms();
         HandlePlayerScale();
+        HandleEnemiesCollision();
         GroundCheck();
     }
 
@@ -103,33 +95,11 @@ public class Player : MonoBehaviour {
         body.velocity = playerMovement;
     }
 
-    private void HandleMovingPlatforms() {
-        // Create an area under the player to check if it collides with platform
-        Vector3 max = standingCollider.bounds.max;
-        Vector3 min = standingCollider.bounds.min;
-        Vector2 corner1 = new Vector2(max.x, min.y - 0.1f);
-        Vector2 corner2 = new Vector2(min.x, min.y - 0.15f);
-        Collider2D hit = Physics2D.OverlapArea(corner1, corner2);
-
-        platform = null;
-
-        if (hit != null) {
-            platform = hit.GetComponent<Platform>();
-        } else {
-            transform.parent = null;
-        }
-        if (platform != null) {
-            transform.parent = platform.transform;
-        } else {
-            transform.parent = null;
-        }
-    }
-
     private void HandlePlayerScale() {
         Vector3 playerScale = Vector3.one;
 
-        if (platform != null) {
-            playerScale = platform.transform.localScale;
+        if (groundChecker.lastPlatform != null) {
+            playerScale = groundChecker.lastPlatform.transform.localScale;
         }
         if (!Mathf.Approximately(playerMovement.x, 0)) {
             transform.localScale = new Vector3(Mathf.Sign(-playerMovement.x) / playerScale.x, 1 / playerScale.y, 1);
@@ -137,23 +107,23 @@ public class Player : MonoBehaviour {
         anim.SetFloat(SPEED, Mathf.Abs(playerMovement.x));
     }
 
+
+    private void HandleEnemiesCollision() {
+
+    }
+
     private void GroundCheck() {
-        if (body.velocity.y <= 0) {
-            shouldCheckGround = true;
-        }
-        if (shouldCheckGround && groundedState.GetIsGrounded()) {
+        if (body.velocity.y <= 0 && groundChecker.GetIsGrounded()) {
             standingCollider.enabled = true;
             jumpingCollider.enabled = false;
-
-            anim.SetBool(IS_JUMPING, false);
-
-            shouldCheckGround = false;
-
+        
             availableAirJumps = maxAirJumps;
+
+            HandleJumpAnimation(false);
         }
     }
 
-//========================================================================================
+    //========================================================================================
 
     private void HandleMovement(object sender, Vector2 movementInput) {
         movementInputX = movementInput.x;
@@ -168,7 +138,7 @@ public class Player : MonoBehaviour {
     }
 
     private void HandleJumping(object sender, EventArgs empty) {
-        if (groundedState.GetIsGrounded()) {
+        if (groundChecker.GetIsGrounded()) {
             // Reset the Y momentum before applying the force
             Vector2 newVelocity = new Vector2(body.velocity.x, 0);
             body.velocity = newVelocity;
@@ -177,25 +147,30 @@ public class Player : MonoBehaviour {
             standingCollider.enabled = false;
             jumpingCollider.enabled = true;
 
-            anim.SetBool(IS_JUMPING, true);
+            HandleJumpAnimation(true);
         }
-        if (!groundedState.GetIsGrounded() && availableAirJumps > 0) {
+        if (!groundChecker.GetIsGrounded() && availableAirJumps > 0) {
             // Reset the Y momentum before applying the force
             Vector2 newVelocity = new Vector2(body.velocity.x, 0);
             body.velocity = newVelocity;
             body.AddForce(Vector2.up * airJumpHeight, ForceMode2D.Impulse);
 
-            availableAirJumps -= 1;
+            availableAirJumps--;
 
-            anim.SetBool(IS_JUMPING, true);
+            HandleJumpAnimation(true);
         }
     }
 
     private void HandleDashing(object sender, EventArgs empty) {
         //if (!groundedState.GetIsGrounded()) {
-            Debug.Log("dashing");
-            //body.AddRelativeForce(Vector2.forward * dashLenght, ForceMode2D.Impulse);
+        //Debug.Log("dashing");
+        //body.AddRelativeForce(Vector2.forward * dashLenght, ForceMode2D.Impulse);
         //}
+    }
+
+    //========================================================================================
+    private void HandleJumpAnimation(bool isJumping) {
+        anim.SetBool(IS_JUMPING, isJumping);
     }
 
     private void OnDestroy() {
