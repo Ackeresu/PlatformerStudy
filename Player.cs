@@ -21,37 +21,40 @@ public class Player : MonoBehaviour {
     public float jumpHeight = 4f;
     public float airJumpHeight = 3f;
     public int maxAirJumps = 1;
-    public float dashLenght = 2f;
+    //public float dashLenght = 2f;
 
+    private float movementInputX;
+    private float movementInputY;
+    private int availableAirJumps;
+    private float minLockTime = 0.1f;
     private Rigidbody2D body;
     private Animator anim;
     private Vector2 playerMovement;
-    private float moveSpeed;
-    private int availableAirJumps;
-    private float movementInputX;
-    //private float movementInputY;
 
-    //private bool isJumping;
+    private bool canMove = true;
     private bool isRunning;
+    //private bool isCrouching;
+    private bool gotHit = false;
 
     // Ground check
     private GroundChecker groundChecker;
-    private bool shouldCheckGround;
 
     public Platform platform;
     public Enemy enemy;
 
+    private const string ENEMY = "Enemy";
+
     // Animation
-    private static string SPEED = "Speed";
-    private static string IS_JUMPING = "isJumping";
-    //private static string IS_CROUCHING = "isCrouching";
+    private const string SPEED = "Speed";
+    private const string IS_JUMPING = "isJumping";
+    private const string IS_CROUCHING = "isCrouching";
+    private const string GOT_HIT = "gotHit";
 
     private void Start() {
         body = GetComponent<Rigidbody2D>();
         anim = GetComponent<Animator>();
         groundChecker = GetComponentInChildren<GroundChecker>();
 
-        moveSpeed = 0;
         availableAirJumps = maxAirJumps;
 
         input.OnPlayerMovement += HandleMovement;
@@ -63,36 +66,42 @@ public class Player : MonoBehaviour {
     private void Update() {
         UpdateMovement();
         HandlePlayerScale();
-        HandleEnemiesCollision();
         GroundCheck();
     }
 
-    private void UpdateMovement() {
-        if (!isRunning) {
-            if (movementInputX == 0) {
-                moveSpeed = 0;
-            }
-            if (moveSpeed > topSpeed) {
-                moveSpeed = topSpeed;
-            }
-            if (moveSpeed <= topSpeed) {
-                moveSpeed += acceleration * Time.deltaTime;
-                playerMovement = new Vector2(movementInputX * moveSpeed, body.velocity.y);
-            } else {
-                playerMovement = new Vector2(movementInputX * topSpeed, body.velocity.y);
-            }
-        } else {
-            if (movementInputX == 0) {
-                moveSpeed = 0;
-            }
-            if (moveSpeed <= topRunSpeed) {
-                moveSpeed += acceleration * Time.deltaTime;
-                playerMovement = new Vector2(movementInputX * moveSpeed, body.velocity.y);
-            } else {
-                playerMovement = new Vector2(movementInputX * topRunSpeed, body.velocity.y);
-            }
+    //========================================================================================
+
+    private void OnCollisionEnter2D(Collision2D collision) {
+        if (LayerMask.LayerToName(collision.gameObject.layer) == ENEMY) {
+            EnemyCollision(collision.gameObject);
         }
-        body.velocity = playerMovement;
+    }
+
+    private void OnCollisionStay2D(Collision2D collision) {
+        if (LayerMask.LayerToName(collision.gameObject.layer) == ENEMY) {
+            EnemyCollision(collision.gameObject);
+        }
+    }
+
+    private void OnCollisionExit2D(Collision2D collision) {
+        if (LayerMask.LayerToName(collision.gameObject.layer) == ENEMY) {
+            enemy = null;
+        }
+    }
+
+    //========================================================================================
+
+    private void UpdateMovement() {
+        if (!canMove) {
+            return;
+        }
+        if (!isRunning) {
+            playerMovement = new Vector2(movementInputX * topSpeed, 0);
+            Move(topSpeed);
+        } else {
+            playerMovement = new Vector2(movementInputX * topRunSpeed, 0);
+            Move(topRunSpeed);
+        }
     }
 
     private void HandlePlayerScale() {
@@ -104,30 +113,88 @@ public class Player : MonoBehaviour {
         if (!Mathf.Approximately(playerMovement.x, 0)) {
             transform.localScale = new Vector3(Mathf.Sign(-playerMovement.x) / playerScale.x, 1 / playerScale.y, 1);
         }
-        anim.SetFloat(SPEED, Mathf.Abs(playerMovement.x));
-    }
-
-
-    private void HandleEnemiesCollision() {
-
+        HandleMoveAnimation(playerMovement.x);
     }
 
     private void GroundCheck() {
         if (body.velocity.y <= 0 && groundChecker.GetIsGrounded()) {
             standingCollider.enabled = true;
             jumpingCollider.enabled = false;
-        
+
             availableAirJumps = maxAirJumps;
 
             HandleJumpAnimation(false);
         }
     }
 
+    private void EnemyCollision(GameObject enemyOBJ) {
+        enemy = enemyOBJ.GetComponent<Enemy>();
+
+        Vector2 newVelocity = new Vector2(0, 0);
+        body.velocity = newVelocity;
+
+        Vector2 knockbackDir = new Vector2(transform.localScale.x, 1);
+
+        body.AddForce(knockbackDir * enemy.knockbackInflicted, ForceMode2D.Impulse);
+
+        if (!gotHit) {
+            StartCoroutine(LockMovementUntilGrounded());
+        }
+    }
+
+    public void LockMovement(float lockTime) {
+        if (!canMove) {
+            return;
+        }
+        canMove = false;
+        StartCoroutine(Acker.Utility.ActionAfterTimer.ActionAfterWaiting(delegate { canMove = true; }, lockTime));
+    }
+
+    private IEnumerator LockMovementUntilGrounded() {
+        gotHit = true;
+
+        HandleHitAnimation(gotHit);
+
+        new WaitForSeconds(minLockTime);
+
+        while (!groundChecker.GetIsGrounded()) {
+            canMove = false;
+            yield return null;
+        }
+        canMove = true;
+        gotHit = false;
+
+        HandleHitAnimation(gotHit);
+    }
+
     //========================================================================================
 
     private void HandleMovement(object sender, Vector2 movementInput) {
         movementInputX = movementInput.x;
+        movementInputY = movementInput.y;
+
+        if (movementInputY < 0) {
+            HandleCrouchingAnimation(1, true);
+        } else {
+            HandleCrouchingAnimation(-1, false);
+        }
     }
+
+    private void Move(float maxSpeed) {
+        body.AddForce(playerMovement, ForceMode2D.Force);
+
+        if (body.velocity.x > maxSpeed) {
+            body.velocity = new Vector2(maxSpeed, body.velocity.y);
+        } else if (body.velocity.x < -maxSpeed) {
+            body.velocity = new Vector2(-maxSpeed, body.velocity.y);
+        }
+    }
+
+    //private void HandleUpDownAnim() {
+    //    if (movementInputY > 0) {
+    //        HandleCrouchingAnimation(isCrouching = true);
+    //    }
+    //}
 
     private void HandleRunning(object sender, bool runningInput) {
         if (runningInput) {
@@ -139,10 +206,7 @@ public class Player : MonoBehaviour {
 
     private void HandleJumping(object sender, EventArgs empty) {
         if (groundChecker.GetIsGrounded()) {
-            // Reset the Y momentum before applying the force
-            Vector2 newVelocity = new Vector2(body.velocity.x, 0);
-            body.velocity = newVelocity;
-            body.AddForce(Vector2.up * jumpHeight, ForceMode2D.Impulse);
+            Jump(body.velocity.x, 0, Vector2.up * jumpHeight);
 
             standingCollider.enabled = false;
             jumpingCollider.enabled = true;
@@ -150,15 +214,19 @@ public class Player : MonoBehaviour {
             HandleJumpAnimation(true);
         }
         if (!groundChecker.GetIsGrounded() && availableAirJumps > 0) {
-            // Reset the Y momentum before applying the force
-            Vector2 newVelocity = new Vector2(body.velocity.x, 0);
-            body.velocity = newVelocity;
-            body.AddForce(Vector2.up * airJumpHeight, ForceMode2D.Impulse);
+            Jump(body.velocity.x, 0, Vector2.up * airJumpHeight);
 
             availableAirJumps--;
 
             HandleJumpAnimation(true);
         }
+    }
+
+    public void Jump(float velX, float velY, Vector2 jumpForce) {
+        Vector2 newVelocity = new Vector2(velX, velY);
+        body.velocity = newVelocity;
+
+        body.AddForce(jumpForce, ForceMode2D.Impulse);
     }
 
     private void HandleDashing(object sender, EventArgs empty) {
@@ -169,8 +237,22 @@ public class Player : MonoBehaviour {
     }
 
     //========================================================================================
+
+    private void HandleMoveAnimation(float moveDir) {
+        anim.SetFloat(SPEED, Mathf.Abs(moveDir));
+    }
+
     private void HandleJumpAnimation(bool isJumping) {
         anim.SetBool(IS_JUMPING, isJumping);
+    }
+
+    private void HandleCrouchingAnimation(float speed, bool isCrouching) {
+        anim["Crouching"].speed = speed * ;
+        anim.SetBool(IS_CROUCHING, isCrouching);
+    }
+
+    private void HandleHitAnimation(bool gotHit) {
+        anim.SetBool(GOT_HIT, gotHit);
     }
 
     private void OnDestroy() {

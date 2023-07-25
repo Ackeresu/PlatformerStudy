@@ -35,13 +35,6 @@ public class FallingPlatform : MonoBehaviour {
         if (platform.playerIsOn && !isFalling) {
                 StartCoroutine(MakePlatformFall());
             }
-            //if (platform.platformType == Platform.PlatformType.Moving && platform.stopAtEnd) {
-            //    Debug.Log("bubu");
-            //    if (platform.transform.position == platform.finishPos) {
-            //        StartCoroutine(MakePlatformFall());
-            //    }
-            //}
-        //}
     }
 
     private IEnumerator MakePlatformFall() {
@@ -50,6 +43,7 @@ public class FallingPlatform : MonoBehaviour {
         if (platform.playerIsOn) {
             yield return new WaitForSecondsRealtime(secBeforeFall);
 
+            platform.StopAllCoroutines();
             platform.platformType = Platform.PlatformType.Stationary;
             body.constraints = RigidbodyConstraints2D.None;
             body.constraints = RigidbodyConstraints2D.FreezeRotation;

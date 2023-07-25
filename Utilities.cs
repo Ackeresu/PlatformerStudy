@@ -1,6 +1,7 @@
 using UnityEngine.Events;
 using UnityEngine;
 using System.Collections;
+using System;
 
 namespace Acker.Utility {
     public class ActionOverTime {
@@ -66,6 +67,15 @@ namespace Acker.Utility {
 
             afterLerpAction?.Invoke();
             yield return null;
+        }
+    }
+
+    public static class ActionAfterTimer {
+
+        public static IEnumerator ActionAfterWaiting(Action afterTimerEvent, float timeToWait) {
+            yield return new WaitForSeconds(timeToWait);
+
+            afterTimerEvent?.Invoke();
         }
     }
 }

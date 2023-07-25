@@ -22,7 +22,7 @@ public class GroundChecker : MonoBehaviour {
     }
 
     private void FixedUpdate() {
-        // Disabilita il collider del GroundChecker se il player sta andando verso l'alto
+        // Disable the groundChecker collider if the player is going up
         if (playerBody.velocity.y <= 0.1) {
             if (!groundCollider.enabled) {
                 groundCollider.enabled = true;

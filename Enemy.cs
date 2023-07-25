@@ -5,10 +5,11 @@ using UnityEngine;
 public class Enemy : MonoBehaviour {
 
     public float moveSpeed = 1f;
+    public float knockbackInflicted = 2f;
 
     private int direction = 1;
     private Vector3 movement;
-    private Rigidbody2D body;
+    private Rigidbody2D playerBody;
     private BoxCollider2D box;
 
     private CheckObstacle checkObstacle;

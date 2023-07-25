@@ -34,10 +34,6 @@ public class Platform : MonoBehaviour {
     public Vector3 finishPos = Vector3.zero;
 
     private Vector3 startPos;
-    //private Vector3 oldPos;
-    //private Vector3 newPos;
-    //private float posX, posY;
-    //private float trackPercent = 0;
     private int direction = 1;
     private int currentStop = 0;
     private bool goBackToStart = false;
@@ -172,92 +168,7 @@ public class Platform : MonoBehaviour {
                 goBackToStart = false;
             }
         }
-
-        //trackPercent += direction * speed * Time.deltaTime;
-        //
-        //// There are not intermediate positions
-        //if (intermediatePos.Count == 0) {
-        //    oldPos = startPos;
-        //    newPos = finishPos;
-        //
-        //    if (stopAtEnd && trackPercent > 1) {
-        //        trackPercent = 1;
-        //    } else {
-        //        UpdatePlatformPosition();
-        //
-        //        if ((direction == 1 && trackPercent > 1) || (direction == -1 && trackPercent < 0)) {
-        //            direction *= -1;
-        //        }
-        //    }
-        //}
-        //// There are intermediate positions
-        //else if (currentStop == 0) {
-        //    oldPos = startPos;
-        //    newPos = intermediatePos[currentStop];
-        //
-        //    UpdatePlatformPosition();
-        //
-        //    if (direction == 1 && trackPercent > 1) {
-        //        trackPercent = 0;
-        //        currentStop++;
-        //    }
-        //    if (direction == -1 && trackPercent < 0) {
-        //        direction *= -1;
-        //    }
-        //} else if (currentStop > 0 && currentStop < intermediatePos.Count) {
-        //    oldPos = intermediatePos[currentStop - 1];
-        //    newPos = intermediatePos[currentStop];
-        //
-        //    UpdatePlatformPosition();
-        //
-        //    if (direction == 1 && trackPercent > 1) {
-        //        trackPercent = 0;
-        //        currentStop++;
-        //    }
-        //    if (direction == -1 && trackPercent < 0) {
-        //        trackPercent = 1;
-        //        currentStop--;
-        //    }
-        //} else if (currentStop == intermediatePos.Count && !goBackToStart) {
-        //    oldPos = intermediatePos[currentStop - 1];
-        //    newPos = finishPos;
-        //
-        //    if (stopAtEnd && trackPercent > 1) {
-        //        trackPercent = 1;
-        //    } else {
-        //        UpdatePlatformPosition();
-        //
-        //        if (direction == 1 && trackPercent > 1 && !circleBetweenPos) {
-        //            direction *= -1;
-        //        } else if (direction == 1 && trackPercent > 1 && circleBetweenPos) {
-        //            trackPercent = 0;
-        //            goBackToStart = true;
-        //        }
-        //        if (direction == -1 && trackPercent < 0) {
-        //            trackPercent = 1;
-        //            currentStop--;
-        //        }
-        //    }
-        //} else if (currentStop == intermediatePos.Count && goBackToStart) {
-        //    oldPos = finishPos;
-        //    newPos = startPos;
-        //
-        //    UpdatePlatformPosition();
-        //
-        //    if (trackPercent > 1) {
-        //        trackPercent = 0;
-        //        currentStop = 0;
-        //        goBackToStart = false;
-        //    }
-        //}
     }
-
-    //private void UpdatePlatformPosition() {
-    //    posX = (newPos.x - oldPos.x) * trackPercent + oldPos.x;
-    //    posY = (newPos.y - oldPos.y) * trackPercent + oldPos.y;
-    //
-    //    transform.position = new Vector3(posX, posY, startPos.z);
-    //}
 
     private IEnumerator UpdatePlatformPosition(Vector3 pos1, Vector3 pos2) {
         isMoving = true;
@@ -293,11 +204,22 @@ public class Platform : MonoBehaviour {
         }
     }
 
-    public void ResetPlatform(PlatformType type) {
-        platformType = type;
+    public void ResetPlatform(PlatformType originalPlatformType) {
+        platformType = originalPlatformType;
         transform.position = startPos;
-        //trackPercent = 0;
         direction = 1;
         currentStop = 0;
+
+        if (platformType == PlatformType.Moving) {
+            MovePlatform();
+            if (intermediatePos.Count == 0) {
+                Debug.Log("bubu");
+                StartCoroutine(UpdatePlatformPosition(startPos, finishPos));
+                direction *= -1;
+            } else if (intermediatePos.Count > 0) {
+                StartCoroutine(UpdatePlatformPosition(startPos, intermediatePos[currentStop]));
+                currentStop++;
+            }
+        }
     }
 }
