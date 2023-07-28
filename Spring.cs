@@ -42,6 +42,7 @@ public class Spring : MonoBehaviour {
             if (shouldLockMovement) {
                 player.LockMovement(lockTime);
             }
+            player.isJumping = false;
         }
     }
 

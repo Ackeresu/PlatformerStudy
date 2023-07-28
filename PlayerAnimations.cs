@@ -5,7 +5,6 @@ using UnityEngine;
 public class PlayerAnimations : MonoBehaviour {
 
     private Animator animator;
-
     private Animation anim;
 
     private const string SPEED = "Speed";
@@ -13,12 +12,14 @@ public class PlayerAnimations : MonoBehaviour {
     private const string IS_RAISING = "isRaising";
     private const string IS_FALLING = "isFalling";
     private const string IS_CROUCHING = "isCrouching";
-    private const string GOT_HIT = "gotHit";
+    private const string IS_HIT = "isHit";
 
     private void Awake() {
         animator = GetComponent<Animator>();
         anim = GetComponent<Animation>();
     }
+
+    //========================================================================================
 
     public void MoveAnimation(float moveDir) {
         animator.SetFloat(SPEED, Mathf.Abs(moveDir));
@@ -42,6 +43,6 @@ public class PlayerAnimations : MonoBehaviour {
     }
 
     public void HitAnimation(bool gotHit) {
-        animator.SetBool(GOT_HIT, gotHit);
+        animator.SetBool(IS_HIT, gotHit);
     }
 }
