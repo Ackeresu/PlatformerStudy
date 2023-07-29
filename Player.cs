@@ -28,7 +28,7 @@ public class Player : MonoBehaviour {
     private float movementInputX;
     private float movementInputY;
     private int availableAirJumps;
-    private float minLockTime = 0.1f;
+    private float minLockTime = 0.2f;
     private Rigidbody2D body;
     private Vector2 playerMovement;
 
@@ -167,8 +167,6 @@ public class Player : MonoBehaviour {
             canMove = false;
             yield return null;
         }
-        standingCollider.enabled = true;
-
         canMove = true;
         isHit = false;
     }

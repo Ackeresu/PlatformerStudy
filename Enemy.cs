@@ -15,7 +15,7 @@ public class Enemy : MonoBehaviour {
     public float verticalKnockback = 3f;
 
     private int direction = 1;
-    private float knockback = 3f;
+    private float knockback = 3.5f;
     private Vector3 movement;
 
     private CheckObstacle checkObstacle;
@@ -36,11 +36,11 @@ public class Enemy : MonoBehaviour {
 
     //========================================================================================
 
-    private void OnCollisionEnter2D(Collision2D collision) {
-        if (LayerMask.LayerToName(collision.gameObject.layer) == PLAYER) {
-            PlayerCheck(collision.gameObject);
-        }
-    }
+    //private void OnCollisionEnter2D(Collision2D collision) {
+    //    if (LayerMask.LayerToName(collision.gameObject.layer) == PLAYER) {
+    //        PlayerCheck(collision.gameObject);
+    //    }
+    //}
     private void OnCollisionStay2D(Collision2D collision) {
         if (LayerMask.LayerToName(collision.gameObject.layer) == PLAYER) {
             PlayerCheck(collision.gameObject);
@@ -69,10 +69,12 @@ public class Enemy : MonoBehaviour {
         playerBody = playerOBJ.gameObject.GetComponent<Rigidbody2D>();
         groundChecker = playerOBJ.gameObject.GetComponentInChildren<GroundChecker>();
 
+        //if (player.GetIsHit()) {
+        //    return;
+        //}
         if (player.GetIsJumping()) {
             HitByPlayer();
-        }
-        else if (!player.GetIsJumping()) {
+        } else if (!player.GetIsJumping()) {
             PlayerHit();
         }
     }
@@ -86,11 +88,11 @@ public class Enemy : MonoBehaviour {
         player.ResetMomentum();
 
         Vector2 knockback = new Vector2(player.transform.localScale.x * horizontalKnockback, verticalKnockback);
-
         playerBody.AddForce(knockback, ForceMode2D.Impulse);
 
         if (!player.GetIsHit()) {
             StartCoroutine(player.LockMovementUntilGrounded());
+            ScoreTracker.Instance.PlayerHit();
         }
     }
 }
