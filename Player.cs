@@ -8,11 +8,13 @@ using UnityEngine;
 using UnityEngine.Timeline;
 using UnityEngine.UIElements;
 
+[RequireComponent(typeof(PlayerAnimations))]
+
 public class Player : MonoBehaviour {
 
     [SerializeField] private InputActions input;
     [SerializeField] private BoxCollider2D standingCollider;
-    [SerializeField] private BoxCollider2D jumpingCollider;
+    [SerializeField] private BoxCollider2D ballCollider;
 
     public int health = 5;
     public float topSpeed = 2f;
@@ -32,13 +34,14 @@ public class Player : MonoBehaviour {
 
     public bool isJumping;
 
+    private bool canMove = true;
+    private bool isRunning;
+    private bool isCrouching;
     private bool isRaising;
     private bool isFalling;
     private bool isHit;
 
-
-    private bool canMove = true;
-    private bool isRunning;
+    public BoxCollider2D playerCollider;
 
     private GroundChecker groundChecker;
 
@@ -51,6 +54,9 @@ public class Player : MonoBehaviour {
     public bool GetIsRaising() => isRaising;
     public bool GetIsFalling() => isFalling;
 
+    //public BoxCollider2D GetPlayerCollider() => playerCollider;
+
+
     private void Start() {
         body = GetComponent<Rigidbody2D>();
         groundChecker = GetComponentInChildren<GroundChecker>();
@@ -58,16 +64,17 @@ public class Player : MonoBehaviour {
 
         availableAirJumps = maxAirJumps;
 
-        input.OnPlayerMovement += HandleMovement;
+        input.OnPlayerMovement += HandleMovementInput;
         input.OnPlayerRun += HandleRunning;
         input.OnPlayerJump += HandleJumping;
         input.OnPlayerDash += HandleDashing;
     }
 
     private void Update() {
-        UpdateMovement();
-        HandlePlayerScale();
         GroundCheck();
+        UpdateMovement();
+        UpdateCollider();
+        HandlePlayerScale();
         HandlePlayerAnimations();
     }
 
@@ -84,7 +91,31 @@ public class Player : MonoBehaviour {
             playerMovement = new Vector2(movementInputX * topRunSpeed, 0);
             Move(topRunSpeed);
         }
+        if (movementInputY < 0) {
+            isCrouching = true;
+        } else {
+            isCrouching = false;
+        }
         GetPlayerVelocityY();
+    }
+
+    private void UpdateCollider() {
+        if (groundChecker.GetIsGrounded()) {
+            standingCollider.enabled = true;
+            ballCollider.enabled = false;
+
+            //playerCollider = standingCollider;
+        }
+        if (isHit) {
+            //standingCollider.enabled = false;
+            //ballCollider.enabled = false;
+        }
+        if (isJumping || isCrouching) {
+            standingCollider.enabled = false;
+            ballCollider.enabled = true;
+
+            //playerCollider = ballCollider;
+        }
     }
 
     private void HandlePlayerScale() {
@@ -101,11 +132,7 @@ public class Player : MonoBehaviour {
 
     private void GroundCheck() {
         if (body.velocity.y <= 0.1 && groundChecker.GetIsGrounded()) {
-            standingCollider.enabled = true;
-            jumpingCollider.enabled = false;
-
             availableAirJumps = maxAirJumps;
-
             isJumping = false;
         }
     }
@@ -140,6 +167,8 @@ public class Player : MonoBehaviour {
             canMove = false;
             yield return null;
         }
+        standingCollider.enabled = true;
+
         canMove = true;
         isHit = false;
     }
@@ -151,15 +180,9 @@ public class Player : MonoBehaviour {
 
     //========================================================================================
 
-    private void HandleMovement(object sender, Vector2 movementInput) {
+    private void HandleMovementInput(object sender, Vector2 movementInput) {
         movementInputX = movementInput.x;
         movementInputY = movementInput.y;
-
-        if (movementInputY < 0) {
-            playerAnimations.CrouchingAnimation(1, true);
-        } else {
-            playerAnimations.CrouchingAnimation(-1, false);
-        }
     }
 
     private void Move(float maxSpeed) {
@@ -186,20 +209,11 @@ public class Player : MonoBehaviour {
         }
         if (groundChecker.GetIsGrounded()) {
             Jump(body.velocity.x, 0, Vector2.up * jumpHeight);
-
-            standingCollider.enabled = false;
-            jumpingCollider.enabled = true;
-
             isJumping = true;
         }
         if (!groundChecker.GetIsGrounded() && availableAirJumps > 0) {
             Jump(body.velocity.x, 0, Vector2.up * airJumpHeight);
-
-            standingCollider.enabled = false;
-            jumpingCollider.enabled = true;
-
             availableAirJumps--;
-
             isJumping = true;
         }
     }
@@ -221,6 +235,13 @@ public class Player : MonoBehaviour {
     private void HandlePlayerAnimations() {
         // Movement
         playerAnimations.MoveAnimation(playerMovement.x);
+
+        // Crouch
+        if (isCrouching) {
+            playerAnimations.CrouchingAnimation(1, isCrouching);
+        } else {
+            playerAnimations.CrouchingAnimation(-1, isCrouching);
+        }
 
         // Jump
         if (isJumping) {
@@ -252,7 +273,7 @@ public class Player : MonoBehaviour {
     //========================================================================================
 
     private void OnDestroy() {
-        input.OnPlayerMovement -= HandleMovement;
+        input.OnPlayerMovement -= HandleMovementInput;
         input.OnPlayerRun -= HandleRunning;
         input.OnPlayerJump -= HandleJumping;
         input.OnPlayerDash -= HandleDashing;

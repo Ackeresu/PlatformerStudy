@@ -10,7 +10,7 @@ public class Ring : MonoBehaviour {
 
     private void OnTriggerEnter2D(Collider2D collision) {
         if (LayerMask.LayerToName(collision.gameObject.layer) == PLAYER) {
-            ScoreTracker.Instance.AddRing();
+            ScoreTracker.Instance.AddRing(ringValue);
             Destroy(this.gameObject);
         }
     }

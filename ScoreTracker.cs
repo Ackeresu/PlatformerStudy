@@ -20,13 +20,13 @@ public class ScoreTracker : MonoBehaviour {
         Singleton();
     }
 
-    public void AddRing() {
-        rings++;
+    public void AddRing(int ringValue) {
+        rings += ringValue;
         Debug.Log($"Rings: {rings}");
     }
 
     public void PlayerHit() {
         rings = 0;
-        Debug.Log($"Rings: {rings}");
+        Debug.Log("You lost your rings!");
     }
 }

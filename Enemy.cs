@@ -5,12 +5,17 @@ using UnityEngine;
 
 public class Enemy : MonoBehaviour {
 
+    public enum EnemyType {
+        Ladybug,
+    };
+    public EnemyType enemyType;
+
     public float moveSpeed = 1f;
     public float horizontalKnockback = 2f;
     public float verticalKnockback = 3f;
 
     private int direction = 1;
-    private float baseKnockback = 3f;
+    private float knockback = 3f;
     private Vector3 movement;
 
     private CheckObstacle checkObstacle;
@@ -59,18 +64,21 @@ public class Enemy : MonoBehaviour {
         }
     }
 
-    private void HitByPlayer() {
-        float velY;
+    private void PlayerCheck(GameObject playerOBJ) {
+        player = playerOBJ.gameObject.GetComponent<Player>();
+        playerBody = playerOBJ.gameObject.GetComponent<Rigidbody2D>();
+        groundChecker = playerOBJ.gameObject.GetComponentInChildren<GroundChecker>();
 
-        if (Mathf.Abs(playerBody.velocity.y) < baseKnockback) {
-            velY = baseKnockback;
-        } else {
-            velY = Mathf.Abs(playerBody.velocity.y);
+        if (player.GetIsJumping()) {
+            HitByPlayer();
         }
-        Vector2 knockback = new Vector2(playerBody.velocity.x, velY);
+        else if (!player.GetIsJumping()) {
+            PlayerHit();
+        }
+    }
 
-        playerBody.AddForce(knockback, ForceMode2D.Impulse);
-
+    private void HitByPlayer() {
+        Acker.GlobalFunctions.ApplyKnockback.VerticalKnockback(playerBody, knockback);
         Destroy(gameObject);
     }
 
@@ -83,21 +91,6 @@ public class Enemy : MonoBehaviour {
 
         if (!player.GetIsHit()) {
             StartCoroutine(player.LockMovementUntilGrounded());
-        }
-    }
-
-    //========================================================================================
-
-    private void PlayerCheck(GameObject playerOBJ) {
-        player = playerOBJ.gameObject.GetComponent<Player>();
-        playerBody = playerOBJ.gameObject.GetComponent<Rigidbody2D>();
-        groundChecker = playerOBJ.gameObject.GetComponentInChildren<GroundChecker>();
-
-        if (player.GetIsJumping() && !groundChecker.GetIsGrounded()) {
-            Debug.Log("bubu");
-            HitByPlayer();
-        } else {
-            PlayerHit();
         }
     }
 }
