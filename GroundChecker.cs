@@ -12,7 +12,8 @@ public class GroundChecker : MonoBehaviour {
 
     private Collider2D groundCollider;
 
-    private string PLATFORM = "Platform";
+    private const string GROUND = "Ground";
+    private const string PLATFORM = "Platform";
 
     public bool GetIsGrounded() => isGrounded;
 
@@ -35,18 +36,24 @@ public class GroundChecker : MonoBehaviour {
     }
 
     private void OnTriggerEnter2D(Collider2D collision) {
-        isGrounded = true;
-
+        if (LayerMask.LayerToName(collision.gameObject.layer) == GROUND) {
+            isGrounded = true;
+        }
         if (LayerMask.LayerToName(collision.gameObject.layer) == PLATFORM) {
+            isGrounded = true;
+
             lastPlatform = collision.gameObject.GetComponent<Platform>();
             lastPlatform.SetPlayerOn(transform.parent, true);
         }
     }
 
     private void OnTriggerExit2D(Collider2D collision) {
-        isGrounded = false;
-
+        if (LayerMask.LayerToName(collision.gameObject.layer) == GROUND) {
+            isGrounded = false;
+        }
         if (LayerMask.LayerToName(collision.gameObject.layer) == PLATFORM) {
+            isGrounded = false;
+
             if (collision.gameObject.GetComponent<Platform>() == lastPlatform) {
                 lastPlatform.SetPlayerOn(transform.parent, false);
                 lastPlatform = null;

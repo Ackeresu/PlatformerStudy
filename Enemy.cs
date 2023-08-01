@@ -19,14 +19,13 @@ public class Enemy : MonoBehaviour {
     private Vector3 movement;
 
     private CheckObstacle checkObstacle;
-
     private Player player;
     private Rigidbody2D playerBody;
-    private GroundChecker groundChecker;
+    private ExtraPlayerEffects effects;
 
     private const string PLAYER = "Player";
 
-    private void Start() {
+    private void Awake() {
         checkObstacle = GetComponentInChildren<CheckObstacle>();
     }
 
@@ -67,21 +66,21 @@ public class Enemy : MonoBehaviour {
     private void PlayerCheck(GameObject playerOBJ) {
         player = playerOBJ.gameObject.GetComponent<Player>();
         playerBody = playerOBJ.gameObject.GetComponent<Rigidbody2D>();
-        groundChecker = playerOBJ.gameObject.GetComponentInChildren<GroundChecker>();
+        effects = playerOBJ.gameObject.GetComponentInChildren<ExtraPlayerEffects>();
 
-        //if (player.GetIsHit()) {
-        //    return;
-        //}
-        if (player.GetIsJumping()) {
-            HitByPlayer();
-        } else if (!player.GetIsJumping()) {
+        if (player.GetIsHit()) {
+            return;
+        }
+        if (effects.GetIsInvincible()) {
+            Destroy(gameObject);
+        }
+        else if (player.GetIsJumping()) {
+            Acker.GlobalFunctions.ApplyKnockback.VerticalKnockback(playerBody, knockback);
+            Destroy(gameObject);
+        }
+        else if (!player.GetIsJumping()) {
             PlayerHit();
         }
-    }
-
-    private void HitByPlayer() {
-        Acker.GlobalFunctions.ApplyKnockback.VerticalKnockback(playerBody, knockback);
-        Destroy(gameObject);
     }
 
     private void PlayerHit() {
@@ -90,9 +89,15 @@ public class Enemy : MonoBehaviour {
         Vector2 knockback = new Vector2(player.transform.localScale.x * horizontalKnockback, verticalKnockback);
         playerBody.AddForce(knockback, ForceMode2D.Impulse);
 
-        if (!player.GetIsHit()) {
+        if (player.GetIsHit()) {
+            return;
+        } else {
             StartCoroutine(player.LockMovementUntilGrounded());
-            ScoreTracker.Instance.PlayerHit();
+            if (effects.GetIsShielded()) {
+                effects.StopShield();
+            } else {
+                ScoreTracker.Instance.PlayerHit();
+            }
         }
     }
 }

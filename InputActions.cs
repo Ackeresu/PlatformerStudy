@@ -11,7 +11,6 @@ public class InputActions : MonoBehaviour {
     public event EventHandler <Vector2> OnPlayerMovement;
     public event EventHandler <bool> OnPlayerRun;
     public event EventHandler OnPlayerJump;
-    public event EventHandler OnPlayerDash;
 
     private void Awake() {
         gameInput = new GameInput();
@@ -25,7 +24,6 @@ public class InputActions : MonoBehaviour {
         gameInput.Player.Run.performed += Run;
 
         gameInput.Player.Jump.performed += JumpPerformed;
-        gameInput.Player.Dash.performed += DashPerformed;
 
         gameInput.Player.Enable();
     }
@@ -42,9 +40,5 @@ public class InputActions : MonoBehaviour {
 
     private void JumpPerformed(UnityEngine.InputSystem.InputAction.CallbackContext obj) {
         OnPlayerJump?.Invoke(this, EventArgs.Empty);
-    }
-
-    private void DashPerformed(UnityEngine.InputSystem.InputAction.CallbackContext obj) {
-        OnPlayerDash?.Invoke(this, EventArgs.Empty);
     }
 }

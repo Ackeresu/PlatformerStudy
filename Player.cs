@@ -23,7 +23,6 @@ public class Player : MonoBehaviour {
     public float jumpHeight = 4f;
     public float airJumpHeight = 3f;
     public int maxAirJumps = 1;
-    //public float dashLenght = 2f;
 
     private float movementInputX;
     private float movementInputY;
@@ -42,32 +41,26 @@ public class Player : MonoBehaviour {
     private bool isHit;
 
     public BoxCollider2D playerCollider;
-
+    private ExtraPlayerEffects effect;
     private GroundChecker groundChecker;
-
     private PlayerAnimations playerAnimations;
-
     public Platform platform;
 
     public bool GetIsJumping() => isJumping;
     public bool GetIsHit() => isHit;
-    public bool GetIsRaising() => isRaising;
-    public bool GetIsFalling() => isFalling;
 
-    //public BoxCollider2D GetPlayerCollider() => playerCollider;
-
+    //========================================================================================
 
     private void Start() {
         body = GetComponent<Rigidbody2D>();
         groundChecker = GetComponentInChildren<GroundChecker>();
         playerAnimations = GetComponent<PlayerAnimations>();
 
-        availableAirJumps = maxAirJumps;
-
         input.OnPlayerMovement += HandleMovementInput;
         input.OnPlayerRun += HandleRunning;
         input.OnPlayerJump += HandleJumping;
-        input.OnPlayerDash += HandleDashing;
+
+        availableAirJumps = maxAirJumps;
     }
 
     private void Update() {
@@ -150,6 +143,8 @@ public class Player : MonoBehaviour {
         }
     }
 
+    //========================================================================================
+
     public void LockMovement(float lockTime) {
         if (!canMove) {
             return;
@@ -223,13 +218,6 @@ public class Player : MonoBehaviour {
         body.AddForce(jumpForce, ForceMode2D.Impulse);
     }
 
-    private void HandleDashing(object sender, EventArgs empty) {
-        //if (!groundedState.GetIsGrounded()) {
-        //Debug.Log("dashing");
-        //body.AddRelativeForce(Vector2.forward * dashLenght, ForceMode2D.Impulse);
-        //}
-    }
-
     private void HandlePlayerAnimations() {
         // Movement
         playerAnimations.MoveAnimation(playerMovement.x);
@@ -274,6 +262,5 @@ public class Player : MonoBehaviour {
         input.OnPlayerMovement -= HandleMovementInput;
         input.OnPlayerRun -= HandleRunning;
         input.OnPlayerJump -= HandleJumping;
-        input.OnPlayerDash -= HandleDashing;
     }
 }
