@@ -10,13 +10,13 @@ namespace Acker.GlobalFunctions {
             float velY;
 
             if (Mathf.Abs(body.velocity.y) < minKnockback) {
-                Vector2 newVelocity = new Vector2(body.velocity.x, 0);
-                body.velocity = newVelocity;
-
                 velY = minKnockback;
             } else {
                 velY = Mathf.Abs(body.velocity.y);
             }
+            Vector2 newVelocity = new Vector2(body.velocity.x, 0);
+            body.velocity = newVelocity;
+
             Vector2 knockback = new Vector2(body.velocity.x, velY);
             body.AddForce(knockback, ForceMode2D.Impulse);
         }

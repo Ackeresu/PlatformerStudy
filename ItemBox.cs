@@ -22,7 +22,7 @@ public class ItemBox : MonoBehaviour {
     private int ringValue;
     private int[] ringList = { 1, 5, 10, 30, 50 };
 
-    private ExtraPlayerEffects effects;
+    private Effects effects;
 
     private const string PLAYER = "Player";
 
@@ -34,7 +34,7 @@ public class ItemBox : MonoBehaviour {
 
     private void OnTriggerEnter2D(Collider2D collision) {
         if (LayerMask.LayerToName(collision.gameObject.layer) == PLAYER) {
-            effects = collision.gameObject.GetComponentInChildren<ExtraPlayerEffects>();
+            effects = collision.gameObject.GetComponentInChildren<Effects>();
 
             // Rings
             if (boxType == BoxType.Ring5 || boxType == BoxType.Ring10 || boxType == BoxType.RingRandom) {
@@ -47,9 +47,9 @@ public class ItemBox : MonoBehaviour {
             else if (boxType == BoxType.MagneticShield) {
                 effects.ActivateShield(true);
             }
-              // Invincibility
-              else if (boxType == BoxType.Invicibility) {
-                effects.ActivateInvincibility();
+            // Invincibility
+            else if (boxType == BoxType.Invicibility) {
+                StartCoroutine(effects.ActivateInvincibility());
             }
             // Speed Boost
             else if (boxType == BoxType.SpeedBoost) {
@@ -63,23 +63,17 @@ public class ItemBox : MonoBehaviour {
     private void UpdateSprite() {
         if (boxType == BoxType.Ring5) {
             newSprite.sprite = sprites[0];
-        }
-        else if (boxType == BoxType.Ring10) {
+        } else if (boxType == BoxType.Ring10) {
             newSprite.sprite = sprites[1];
-        }
-        else if (boxType == BoxType.RingRandom) {
+        } else if (boxType == BoxType.RingRandom) {
             newSprite.sprite = sprites[2];
-        }
-        else if (boxType == BoxType.Shield) {
+        } else if (boxType == BoxType.Shield) {
             newSprite.sprite = sprites[3];
-        }
-        else if (boxType == BoxType.MagneticShield) {
+        } else if (boxType == BoxType.MagneticShield) {
             newSprite.sprite = sprites[4];
-        }
-        else if (boxType == BoxType.Invicibility) {
+        } else if (boxType == BoxType.Invicibility) {
             newSprite.sprite = sprites[5];
-        }
-        else if (boxType == BoxType.SpeedBoost) {
+        } else if (boxType == BoxType.SpeedBoost) {
             newSprite.sprite = sprites[6];
         }
     }

@@ -3,13 +3,16 @@ using System.Collections.Generic;
 using UnityEditor.Animations;
 using UnityEngine;
 
-public class ExtraPlayerEffects : MonoBehaviour {
+public class Effects : MonoBehaviour {
 
     [SerializeField] private Sprite[] sprites;
     [SerializeField] private AnimatorController[] animatorControllers;
 
+    public float invincibilityDuration;
+    public float speedBoostValue;
+
     private bool isShielded;
-    private bool isInvicible;
+    private bool isInvincible;
     private bool isSpeedBoosted;
 
     private Player player;
@@ -17,7 +20,7 @@ public class ExtraPlayerEffects : MonoBehaviour {
     private Animator animator;
 
     public bool GetIsShielded() => isShielded;
-    public bool GetIsInvincible() => isInvicible;
+    public bool GetIsInvincible() => isInvincible;
     public bool GetIsSpeedBoosted() => isSpeedBoosted;
 
     private void Awake() {
@@ -29,10 +32,6 @@ public class ExtraPlayerEffects : MonoBehaviour {
         animator.enabled = false;
     }
 
-    //private void Update() {
-    //    CheckActiveEffect();
-    //}
-
     public void ActivateShield(bool isMagnetic) {
         isShielded = true;
 
@@ -43,20 +42,38 @@ public class ExtraPlayerEffects : MonoBehaviour {
         }
     }
 
-    public void ActivateInvincibility() {
-        isInvicible = true;
+    // =================================================== DA FIXARE =============================================================
+    public IEnumerator ActivateInvincibility() {
+        isInvincible = true;
         SetEffect(2);
+
+        yield return new WaitForSeconds(invincibilityDuration);
+
+        spriteRenderer.enabled = false;
+        animator.enabled = false;
+
+        isInvincible = false;
+
+        ////Print the time of when the function is first called.
+        //Debug.Log("Started Coroutine at timestamp : " + Time.time);
+        //
+        ////yield on a new YieldInstruction that waits for 5 seconds.
+        //yield return new WaitForSeconds(5);
+        //
+        ////After we have waited 5 seconds print the time again.
+        //Debug.Log("Finished Coroutine at timestamp : " + Time.time);
     }
+    // =================================================== DA FIXARE =============================================================
 
     public void ActivateSpeedBoost() {
         isSpeedBoosted = true;
-        player.topSpeed *= 2;
+        player.topSpeed += speedBoostValue;
     }
 
     public void StopShield() {
+        isShielded = false;
         spriteRenderer.enabled = false;
         animator.enabled = false;
-        isShielded = false;
     }
 
     private void SetEffect(int index) {

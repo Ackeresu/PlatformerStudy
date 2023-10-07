@@ -41,7 +41,7 @@ public class Player : MonoBehaviour {
     private bool isHit;
 
     public BoxCollider2D playerCollider;
-    private ExtraPlayerEffects effect;
+    private Effects effects;
     private GroundChecker groundChecker;
     private PlayerAnimations playerAnimations;
     public Platform platform;

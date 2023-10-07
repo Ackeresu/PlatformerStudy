@@ -6,6 +6,7 @@ using UnityEngine;
 public class Enemy : MonoBehaviour {
 
     public enum EnemyType {
+        Spikes,
         Ladybug,
     };
     public EnemyType enemyType;
@@ -18,19 +19,21 @@ public class Enemy : MonoBehaviour {
     private float knockback = 3.5f;
     private Vector3 movement;
 
-    private CheckObstacle checkObstacle;
+    private CheckCollisions checkCollisions;
     private Player player;
     private Rigidbody2D playerBody;
-    private ExtraPlayerEffects effects;
+    private Effects effects;
 
     private const string PLAYER = "Player";
 
     private void Awake() {
-        checkObstacle = GetComponentInChildren<CheckObstacle>();
+        checkCollisions = GetComponentInChildren<CheckCollisions>();
     }
 
     private void Update() {
-        UpdateMovement();
+        if (enemyType != EnemyType.Spikes) {
+            UpdateMovement();
+        }
     }
 
     //========================================================================================
@@ -57,7 +60,7 @@ public class Enemy : MonoBehaviour {
         movement = new Vector3(direction * moveSpeed * Time.deltaTime, 0, 0);
         transform.position += movement;
 
-        if (checkObstacle.GetObstacleCollision()) {
+        if (checkCollisions.GetObstacleCollision()) {
             direction *= -1;
             transform.localScale = new Vector3(1 * direction, 1, 1);
         }
@@ -66,19 +69,21 @@ public class Enemy : MonoBehaviour {
     private void PlayerCheck(GameObject playerOBJ) {
         player = playerOBJ.gameObject.GetComponent<Player>();
         playerBody = playerOBJ.gameObject.GetComponent<Rigidbody2D>();
-        effects = playerOBJ.gameObject.GetComponentInChildren<ExtraPlayerEffects>();
+        effects = playerOBJ.gameObject.GetComponentInChildren<Effects>();
 
         if (player.GetIsHit()) {
             return;
         }
+        if (enemyType == EnemyType.Spikes) {
+            PlayerHit();
+            return;
+        }
         if (effects.GetIsInvincible()) {
             Destroy(gameObject);
-        }
-        else if (player.GetIsJumping()) {
+        } else if (player.GetIsJumping()) {
             Acker.GlobalFunctions.ApplyKnockback.VerticalKnockback(playerBody, knockback);
             Destroy(gameObject);
-        }
-        else if (!player.GetIsJumping()) {
+        } else if (!player.GetIsJumping()) {
             PlayerHit();
         }
     }
